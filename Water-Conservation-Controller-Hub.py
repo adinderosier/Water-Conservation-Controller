@@ -10,7 +10,7 @@ import datetime
 
 sel = selectors.DefaultSelector()
 
-client = pymongo.MongoClient("mongodb+srv://python-database-interconnect:sAKyROzzZ8GlUCy2@cluster0.qugia2n.mongodb.net/?retryWrites=true&w=majority")
+client = pymongo.MongoClient("mongodb://localhost:27017")
 
 def accept_wrapper(sock):
     conn, addr = sock.accept()  # Should be ready to read
@@ -23,13 +23,13 @@ def accept_wrapper(sock):
     
 def service_connection(key, mask):
     global client
-    db = client['myFirstDatabase']
+    db = client['ideafest2023']
     post = {"author": "python-databse-interconnect",
             "volume": 0,
             "flow": 0,
             "tags": ["mongodb", "python", "pymongo"],
             "date": datetime.datetime.utcnow()}
-    posts = db['posts']
+    posts = db['data']
     sock = key.fileobj
     data = key.data
     if mask & selectors.EVENT_READ:
@@ -43,10 +43,12 @@ def service_connection(key, mask):
     if mask & selectors.EVENT_WRITE:
         if data.outb:
             print(f"Echoing \"{data.outb.decode('utf-8')}\" to {data.addr}")
-            volume = float(str(str(data.outb, 'utf-8').split(' ')[1])[:-1])
-            flow = float(str(str(data.outb, 'utf-8').split(' ')[3]))
+            volume = float(str(str(data.outb, 'utf-8').split(',')[0]))
+            flow = float(str(str(data.outb, 'utf-8').split(',')[1]))
+            author = str(str(data.outb, 'utf-8').split(',')[2])
             post['volume'] = volume
             post['flow'] = flow
+            post['author'] = author
             posts.insert_one(post).inserted_id
             sent = sock.send(data.outb)  # Should be ready to write
             data.outb = data.outb[sent:]
